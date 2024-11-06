@@ -4,6 +4,8 @@ import { PaginationQueryDto } from 'src/common/dtos/pagination-query.dto';
 import { CreateUsersDto, UpdateUsersDto } from '../dtos';
 import { hashSync, verifySync } from '@node-rs/bcrypt';
 import { SignInDto } from 'src/app/auth/dtos';
+import { catchError, from, map, switchMap } from 'rxjs';
+
 @Injectable()
 export class UsersService {
   constructor(private readonly userRepository: UsersRepository) {}
@@ -13,13 +15,22 @@ export class UsersService {
   }
 
   public detail(id: string) {
-    try {
-      return this.userRepository.firstOrThrow({
-        id,
-      });
-    } catch (error) {
-      throw new Error(error);
-    }
+    return from(
+      this.userRepository.firstOrThrow(
+        {
+          id,
+        },
+        {
+          id: true,
+          email: true,
+          fullName: true,
+        },
+      ),
+    ).pipe(
+      catchError((error) => {
+        throw new Error(error);
+      }),
+    );
   }
 
   public async destroy(id: string) {
@@ -48,32 +59,44 @@ export class UsersService {
     }
   }
 
-  public async signUp(signUpDto: CreateUsersDto) {
-    try {
-      const password = hashSync(signUpDto.password, 10);
-      return this.userRepository.create({
-        ...signUpDto,
-        password,
-      });
-    } catch (error) {
-      throw new Error(error.message);
-    }
+  public signUp(signUpDto: CreateUsersDto) {
+    return from(
+      this.userRepository.any({
+        where: {
+          email: signUpDto.email,
+        },
+      }),
+    ).pipe(
+      map((exist) => {
+        if (exist) throw new Error('error.user_already_exist');
+        return hashSync(signUpDto.password);
+      }),
+      switchMap((password) => {
+        return this.userRepository.create({
+          ...signUpDto,
+          password,
+        });
+      }),
+    );
   }
 
-  public async signIn(signInDto: SignInDto) {
-    try {
-      const user = await this.userRepository.firstOrThrow({
+  public signIn(signInDto: SignInDto) {
+    return from(
+      this.userRepository.firstOrThrow({
         email: signInDto.email,
-      });
-      if (!user) throw new Error('data.not_found');
-      if (user.email != signInDto.email) throw new Error('data.not_found');
+      }),
+    ).pipe(
+      map((user) => {
+        if (user.email != signInDto.email) throw new Error('error.not_found');
 
-      if (!verifySync(signInDto.password, user.password))
-        throw new Error('password_not_match');
+        if (!verifySync(signInDto.password, user.password))
+          throw new Error('error.password_not_match');
 
-      return user;
-    } catch (error) {
-      throw new Error(error.message);
-    }
+        return user;
+      }),
+      catchError((error) => {
+        throw new Error(error.message);
+      }),
+    );
   }
 }

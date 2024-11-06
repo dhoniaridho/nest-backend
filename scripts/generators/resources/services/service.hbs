@@ -2,48 +2,30 @@ import { Injectable } from '@nestjs/common';
 import { {{className}}Repository } from '../repositories';
 import { PaginationQueryDto } from 'src/common/dtos/pagination-query.dto';
 import { Create{{className}}Dto, Update{{className}}Dto } from '../dtos';
+import { from, Observable } from 'rxjs';
 
 @Injectable()
 export class {{className}}Service {
   constructor(private readonly {{variableName}}Repository: {{className}}Repository) {}
 
   public paginate(paginateDto: PaginationQueryDto) {
-    return this.{{variableName}}Repository.paginate(paginateDto);
+    return from(this.{{variableName}}Repository.paginate(paginateDto));
   }
 
   public detail(id: string) {
-    try {
-      return this.{{variableName}}Repository.firstOrThrow({
-        id,
-      });
-    } catch (error) {
-      throw new Error(error);
-    }
+    return from(this.{{variableName}}Repository.firstOrThrow({ id }));
   }
 
-  public async destroy(id: string) {
-    try {
-      return this.{{variableName}}Repository.delete({
-        id,
-      });
-    } catch (error) {
-      throw new Error(error);
-    }
+  public destroy(id: string) {
+    return from(this.{{variableName}}Repository.delete({ id }));
   }
 
-  public async create(create{{className}}Dto: Create{{className}}Dto) {
-    try {
-      return this.{{variableName}}Repository.create(create{{className}}Dto);
-    } catch (error) {
-      throw new Error(error);
-    }
+  public create(create{{className}}Dto: Create{{className}}Dto) {
+    return from(this.{{variableName}}Repository.create(create{{className}}Dto));
   }
 
-  public async update(id: string, update{{className}}Dto: Update{{className}}Dto) {
-    try {
-      return this.{{variableName}}Repository.update({ id }, update{{className}}Dto);
-    } catch (error) {
-      throw new Error(error);
-    }
+  public update(id: string, update{{className}}Dto: Update{{className}}Dto) {
+    return from(this.{{variableName}}Repository.update({ id }, update{{className}}Dto));
   }
 }
+

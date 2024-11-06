@@ -65,7 +65,7 @@ export class UsersRepository {
     select?: Prisma.UserSelect,
   ) {
     const data = await this.prismaService.user.findFirst({ where, select });
-    if (!data) throw new Error('data.not_found');
+    if (!data) throw new Error('error.not_found');
     return data;
   }
 

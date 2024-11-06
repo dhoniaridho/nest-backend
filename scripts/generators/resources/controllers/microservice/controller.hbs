@@ -5,6 +5,7 @@ import { {{className}}Service } from 'src/app/{{fileName}}/services';
 import { PaginationQueryDto } from 'src/common/dtos/pagination-query.dto';
 import { ResponseEntity } from 'src/common/entities/response.entity';
 import { Create{{className}}Dto, Update{{className}}Dto } from 'src/app/{{fileName}}/dtos';
+import { map, catchError } from 'rxjs/operators';
 import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('{{className}}')
@@ -19,91 +20,98 @@ export class {{className}}MicroserviceController {
   ) {}
 
   @MessagePattern('{{variableName}}.create')
-  public async create(@Payload() create{{className}}Dto: Create{{className}}Dto) {
-    try {
-      const data = await this.{{variableName}}Service.create(create{{className}}Dto);
-      return new ResponseEntity({
+  public create(@Payload() create{{className}}Dto: Create{{className}}Dto) {
+    return from(this.{{variableName}}Service.create(create{{className}}Dto)).pipe(
+      map(data => new ResponseEntity({
         data,
         message: 'success',
-      });
-    } catch (error) {
-      throw new RpcException(
-        new ResponseEntity({
+      })),
+      catchError(error => { 
+        throw new RpcException(new ResponseEntity({
           status: HttpStatus.BAD_REQUEST,
           message: error.message
-        })
-      );
-    }
+        }));
+      }),
+    );
   }
 
   @MessagePattern('{{variableName}}.find')
-  public async find(@Payload() filter: Omit<Filter, 'include'>) {
-    return this.{{variableName}}Repository.find(filter);
+  public find(@Payload() filter: Omit<Filter, 'include'>): Observable<Prisma.{{modelName}}[]> {
+    return from(this.{{variableName}}Repository.find(filter)).pipe(
+      catchError(error => {
+        throw new RpcException(new ResponseEntity({
+          status: HttpStatus.BAD_REQUEST,
+          message: error.message
+        }));
+      }),
+    );
   }
 
   @MessagePattern('{{variableName}}.paginate')
-  public async index(@Payload() paginateDto: PaginationQueryDto) {
-    try {
-      const data = await this.{{variableName}}Service.paginate(paginateDto);
-      return new ResponseEntity({
+  public index(@Payload() paginateDto: PaginationQueryDto) {
+    return from(this.{{variableName}}Service.paginate(paginateDto)).pipe(
+      map(data => new ResponseEntity({
         data,
         message: 'success',
-      });
-    } catch (error) {
-      throw new RpcException(error.message, HttpStatus.NOT_FOUND);
-    }
+      })),
+      catchError(error => {
+        throw new RpcException(new ResponseEntity({
+          status: HttpStatus.BAD_REQUEST,
+          message: error.message
+        }));
+      }),
+    );
   }
 
   @MessagePattern('{{variableName}}.detail')
-  public async detail(@Payload('id') id: string) {
-    try {
-      const data = await this.{{variableName}}Service.detail(id);
-
-      return new ResponseEntity({
+  public detail(@Payload('id') id: string) {
+    return from(this.{{variableName}}Service.detail(id)).pipe(
+      map(data => new ResponseEntity({
         data,
         message: 'success',
-      });
-    } catch (error) {
-      throw new RpcException(error.message, HttpStatus.NOT_FOUND);
-    }
+      })),
+      catchError(error => {
+        throw new RpcException(new ResponseEntity({
+          status: HttpStatus.BAD_REQUEST,
+          message: error.message
+        }));
+      }),
+    );
   }
 
   @MessagePattern('{{variableName}}.destroy')
-  public async destroy(@Payload('id') id: string) {
-    try {
-      const data = await this.{{variableName}}Service.destroy(id);
-      return new ResponseEntity({
+  public destroy(@Payload('id') id: string) {
+    return from(this.{{variableName}}Service.destroy(id)).pipe(
+      map(data => new ResponseEntity({
         data,
         message: 'success',
-      });
-    } catch (error) {
-      throw new RpcException(
-        new ResponseEntity({
+      })),
+      catchError(error => {
+        throw new RpcException(new ResponseEntity({
           status: HttpStatus.BAD_REQUEST,
           message: error.message
-        })
-      );
-    }
+        }));
+      }),
+    );
   }
 
   @MessagePattern(':id')
-  public async update(
+  public update(
     @Payload('id') id: string,
     @Payload() update{{className}}Dto: Update{{className}}Dto,
   ) {
-    try {
-      const data = await this.{{variableName}}Service.update(id, update{{className}}Dto);
-      return new ResponseEntity({
+    return from(this.{{variableName}}Service.update(id, update{{className}}Dto)).pipe(
+      map(data => new ResponseEntity({
         data,
         message: 'success',
-      });
-    } catch (error) {
-      throw new RpcException(
-        new ResponseEntity({
+      })),
+      catchError(error => {
+        throw new RpcException(new ResponseEntity({
           status: HttpStatus.BAD_REQUEST,
           message: error.message
-        })
-      );
-    }
+        }));
+      }),
+    );
   }
 }
+

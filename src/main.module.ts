@@ -5,12 +5,14 @@ import { I18nModule } from 'nestjs-i18n';
 import { join } from 'path';
 import { APP_FILTER } from '@nestjs/core';
 import { HttpExceptionFilter } from './common/filters/exception.filter';
+import { StorageModule } from './platform/storage/storage.module';
 
 @Global()
 @Module({
   imports: [
     AppModule,
     DatabaseModule,
+    StorageModule,
     I18nModule.forRoot({
       fallbackLanguage: 'id',
       loaderOptions: {
@@ -26,6 +28,6 @@ import { HttpExceptionFilter } from './common/filters/exception.filter';
       useClass: HttpExceptionFilter,
     },
   ],
-  exports: [DatabaseModule],
+  exports: [DatabaseModule, StorageModule],
 })
 export class MainModule {}

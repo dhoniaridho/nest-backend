@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsAlpha, IsEmail, IsString } from 'class-validator';
+import { IsEmail, IsString, Matches } from 'class-validator';
 import { i18nValidationMessage } from 'nestjs-i18n';
 
 export class CreateUsersDto {
@@ -7,7 +7,7 @@ export class CreateUsersDto {
   @IsString({
     message: i18nValidationMessage('validation.string'),
   })
-  @IsAlpha()
+  @Matches(/^[a-zA-Z0-9 -]*$/)
   fullName: string;
 
   @ApiProperty()

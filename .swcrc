@@ -15,16 +15,14 @@
     },
     "baseUrl": "./",
     "paths": {
-      "@/*": [
-        "src/*"
-      ],
-      "src/*": [
-        "src/*"
-      ],
-      "@app/*": [
-        "src/app/*"
-      ]
+      "@/*": ["src/*"],
+      "src/*": ["src/*"],
+      "@app/*": ["src/app/*"]
     }
   },
-  "minify": false
+  "minify": false,
+  "module": {
+    "ignoreDynamic": true,
+    "type": "commonjs"
+  }
 }

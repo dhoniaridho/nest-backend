@@ -1,4 +1,5 @@
 import { HttpStatus } from '@nestjs/common';
+import { I18nContext } from 'nestjs-i18n';
 
 export class ResponseEntity<T = unknown> {
   data?: T | null;
@@ -17,9 +18,9 @@ export class ResponseEntity<T = unknown> {
     status?: HttpStatus;
     errors?: { field: string; message: string[] }[];
   }) {
-    this.message = message || 'success';
+    this.message = I18nContext.current()?.i18n?.t(message || 'success');
     this.data = data || null;
-    this.status = status;
+    this.status = status || HttpStatus.OK;
     this.errors = errors;
   }
 }

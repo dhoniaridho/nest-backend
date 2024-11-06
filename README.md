@@ -46,6 +46,9 @@ $ pnpm db:generate
 
 # create new feature with single command
 $ pnpm make:app
+
+# run app with single command
+$ docker compose up -d
 ```
 
 ## Running the app

@@ -13,7 +13,9 @@ import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { ResponseEntity } from './common/entities/response.entity';
 
 async function bootstrap() {
-  const app = await NestFactory.create(MainModule);
+  const app = await NestFactory.create(MainModule, {
+    logger: ['log', 'error', 'warn', 'debug', 'verbose'],
+  });
   app.enableVersioning({
     type: VersioningType.URI,
   });
@@ -53,8 +55,14 @@ async function bootstrap() {
     credentials: true,
   });
 
+  app.useLogger(app.get(Logger));
+
   if (process.env.NODE_ENV !== 'production') {
-    SwaggerModule.setup('api', app, document);
+    SwaggerModule.setup('api', app, document, {
+      swaggerOptions: {
+        persistAuthorization: true,
+      },
+    });
   }
 
   if (!ENV.APP_PORT) {

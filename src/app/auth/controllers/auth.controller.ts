@@ -15,6 +15,7 @@ import { AuthGuard } from '../guards';
 import { User } from '../decorators';
 import { User as Auth } from '@prisma/client';
 import { SignUpDto } from '../dtos';
+import { catchError, map } from 'rxjs';
 
 @ApiTags('Auth')
 @Controller({
@@ -28,38 +29,40 @@ export class AuthController {
     summary: 'Sign in',
   })
   @Post('sign-in')
-  async signIn(@Body() createAuthDto: SignInDto) {
-    try {
-      const data = await this.authService.signIn(createAuthDto);
-      return new ResponseEntity({
-        data,
-      });
-    } catch (error) {
-      throw new HttpException(error.message, HttpStatus.UNAUTHORIZED);
-    }
+  signIn(@Body() createAuthDto: SignInDto) {
+    return this.authService.signIn(createAuthDto).pipe(
+      map((data) => new ResponseEntity({ data })),
+      catchError((error) => {
+        throw new HttpException(error.message, HttpStatus.UNAUTHORIZED);
+      }),
+    );
   }
 
   @Post('sign-up')
-  async signUp(@Body() signUpDto: SignUpDto) {
-    try {
-      const data = await this.authService.signUp(signUpDto);
-      return new ResponseEntity({
-        data,
-      });
-    } catch (error) {
-      throw new HttpException(error.message, HttpStatus.UNAUTHORIZED);
-    }
+  signUp(@Body() signUpDto: SignUpDto) {
+    return this.authService.signUp(signUpDto).pipe(
+      map((data) => new ResponseEntity({ data })),
+      catchError((error) => {
+        throw new HttpException(error.message, HttpStatus.UNAUTHORIZED);
+      }),
+    );
   }
 
   @ApiSecurity('JWT')
   @UseGuards(AuthGuard)
   @Get('profile')
-  async profile(@User() user: Auth) {
-    const data = await this.authService.profile(user);
-
-    return new ResponseEntity({
-      message: 'success',
-      data: data,
-    });
+  profile(@User() user: Auth) {
+    return this.authService.profile(user).pipe(
+      map(
+        (data) =>
+          new ResponseEntity({
+            message: 'success',
+            data: data,
+          }),
+        catchError((error) => {
+          throw new HttpException(error.message, HttpStatus.UNAUTHORIZED);
+        }),
+      ),
+    );
   }
 }

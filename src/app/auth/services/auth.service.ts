@@ -4,6 +4,8 @@ import { SignInDto } from '../dtos/sign-in.dto';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '@prisma/client';
 import { SignUpDto } from '../dtos';
+import { map } from 'rxjs';
+import { pick } from 'lodash';
 
 @Injectable()
 export class AuthService {
@@ -12,40 +14,35 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async signIn(signInDto: SignInDto): Promise<{
-    token: string;
-    user: User;
-  }> {
-    const user = await this.userService.signIn(signInDto);
-    const token = this.jwtService.sign({
-      email: user.email,
-      id: user.id,
-      name: user.fullName,
-    });
-
-    return {
-      token,
-      user,
-    };
+  signIn(signInDto: SignInDto) {
+    return this.userService.signIn(signInDto).pipe(
+      map((user) => ({
+        token: this.jwtService.sign({
+          email: user.email,
+          id: user.id,
+          name: user.fullName,
+        }),
+        user: pick(user, ['email', 'id', 'fullName']),
+      })),
+    );
   }
 
-  async signUp(signUpDto: SignUpDto): Promise<{
-    token: string;
-    user: User;
-  }> {
-    const user = await this.userService.signUp(signUpDto);
-    const token = this.jwtService.sign({
-      email: user.email,
-      id: user.id,
-      name: user.fullName,
-    });
-    return {
-      token,
-      user,
-    };
+  signUp(signUpDto: SignUpDto) {
+    return this.userService.signUp(signUpDto).pipe(
+      map((user) => pick(user, ['email', 'id', 'fullName'])),
+      map((user) => {
+        const token = this.jwtService.sign({
+          email: user.email,
+          id: user.id,
+          name: user.fullName,
+        });
+
+        return { token, user };
+      }),
+    );
   }
 
-  async profile(user: User): Promise<User> {
+  profile(user: User) {
     return this.userService.detail(user.id);
   }
 }

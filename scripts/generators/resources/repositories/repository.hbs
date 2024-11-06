@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { from } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { Prisma } from '@prisma/client';
 import { PaginationQueryDto } from 'src/common/dtos/pagination-query.dto';
 import { PaginatedEntity } from 'src/common/entities/paginated.entity';
@@ -17,10 +19,10 @@ export type Filter = {
 export class {{className}}Repository {
   constructor(private readonly prismaService: PrismaService) {}
 
-  public async paginate(paginateDto: PaginationQueryDto, filter?: Filter) {
+  public paginate(paginateDto: PaginationQueryDto, filter?: Filter) {
     const { limit = 10, page = 1 } = paginateDto;
 
-    const [data, count] = await this.prismaService.$transaction([
+    return from(this.prismaService.$transaction([
       this.prismaService.{{variableName}}.findMany({
         skip: (+page - 1) * +limit,
         take: +limit,
@@ -28,65 +30,99 @@ export class {{className}}Repository {
         orderBy: filter?.orderBy,
         cursor: filter?.cursor,
         include: filter?.include,
-        skip: filter?.skip
       }),
       this.prismaService.{{variableName}}.count({
         where: filter?.where,
       }),
-    ]);
-
-    return new PaginatedEntity(data, {
-      limit,
-      page,
-      totalData: count,
-    });
+    ])).pipe(
+      map(([data, count]) => new PaginatedEntity(data, {
+        limit,
+        page,
+        totalData: count,
+      })),
+      catchError(() => {
+        throw new Error();
+      }),
+    );
   }
 
-  public async create(data: Prisma.{{modelName}}CreateInput) {
-    return this.prismaService.{{variableName}}.create({ data });
+  public create(data: Prisma.{{modelName}}CreateInput) {
+    return from(this.prismaService.{{variableName}}.create({ data })).pipe(
+      catchError(() => {
+        throw new Error();
+      }),
+    );
   }
 
-  public async update(
+  public update(
     where: Prisma.{{modelName}}WhereUniqueInput,
     data: Prisma.{{modelName}}UpdateInput,
   ) {
-    return this.prismaService.{{variableName}}.update({ where, data });
+    return from(this.prismaService.{{variableName}}.update({ where, data })).pipe(
+      catchError(() => {
+        throw new Error();
+      }),
+    );
   }
 
-  public async delete(
+  public delete(
     where: Prisma.{{modelName}}WhereUniqueInput,
   ) {
-    return this.prismaService.{{variableName}}.update({
+    return from(this.prismaService.{{variableName}}.update({
       where,
       data: { deletedAt: new Date() },
-    });
+    })).pipe(
+      catchError(() => {
+        throw new Error();
+      }),
+    );
   }
 
-  public async first(
+  public first(
     where: Prisma.{{modelName}}WhereUniqueInput,
     select?: Prisma.{{modelName}}Select,
   ) {
-    return this.prismaService.{{variableName}}.findUnique({ where, select });
+    return from(this.prismaService.{{variableName}}.findUnique({ where, select })).pipe(
+      catchError(() => {
+        throw new Error();
+      }),
+    );
   }
 
-  public async firstOrThrow(
+  public firstOrThrow(
     where: Prisma.{{modelName}}WhereUniqueInput,
     select?: Prisma.{{modelName}}Select,
   ) {
-    const data = await this.prismaService.{{variableName}}.findUnique({ where, select });
-    if(!data) throw new Error('data.not_found');
-    return data;
+    return from(this.prismaService.{{variableName}}.findUnique({ where, select })).pipe(
+      catchError(() => {
+        throw new Error();
+      }),
+    );
   }
 
-  public async find(filter: Filter) {
-    return this.prismaService.{{variableName}}.findMany(filter);
+  public find(filter: Filter) {
+    return from(this.prismaService.{{variableName}}.findMany(filter)).pipe(
+      catchError(() => {
+        throw new Error();
+      }),
+    );
   }
 
-  public async count(filter: Omit<Filter, 'include'>) {
-    return this.prismaService.{{variableName}}.count(filter);
+  public count(filter: Omit<Filter, 'include'>) {
+    return from(this.prismaService.{{variableName}}.count(filter)).pipe(
+      catchError(() => {
+        throw new Error();
+      }),
+    );
   }
 
-  public async any(filter: Omit<Filter, 'include'>) {
-    return (await this.prismaService.{{variableName}}.count(filter)) > 0;
+  public any(filter: Omit<Filter, 'include'>) {
+    return this.count(filter).pipe(
+      map(count => count > 0),
+      catchError(() => {
+        throw new Error();
+      }),
+    );
   }
 }
+
